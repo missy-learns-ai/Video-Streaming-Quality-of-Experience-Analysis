@@ -17,7 +17,7 @@ The analysis examines how application, network, device, user, and subjective fee
 
 ```text
 .
-├── DataScienceProject_updated.ipynb
+├── qoe_exploratory_analysis.ipynb
 ├── data/
 │   └── video_streaming_qoe.csv
 ├── docs/
@@ -25,7 +25,7 @@ The analysis examines how application, network, device, user, and subjective fee
 └── README.md
 ```
 
-- **DataScienceProject_updated.ipynb** — main exploratory analysis and modeling notebook.
+- **qoe_exploratory_analysis.ipynb** — main exploratory analysis and modeling notebook.
 - **data/video_streaming_qoe.csv** — streaming-session dataset used in the analysis.
 - **docs/** — final project report.
 
