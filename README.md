@@ -1,151 +1,144 @@
-# 📊 Analysis of Quality of Experience (QoE) in Video Streaming
+# Video Streaming Quality of Experience Analysis
 
-This repository presents a **data-driven analysis of Quality of Experience (QoE) in mobile video streaming**, focusing on how technical Quality of Service (QoS) metrics and user feedback influence perceived satisfaction.
+A data science project exploring **Quality of Experience (QoE) in mobile video streaming** using crowdsourced measurements from the PoqMoN/PoqeMoN study around Paris.
 
-The project was conducted as part of the **Data Science – Theory to Practice** course at **Télécom SudParis**, using real crowdsourced measurements from the **PoqeMoN project** collected around Paris.
+The analysis examines how application, network, device, user, and subjective feedback variables relate to **Mean Opinion Score (MOS)**, then builds machine-learning models to identify sessions at risk of poor user experience.
 
----
+## Project goals
 
-## 🎯 Project Objectives
+- Explore the main drivers of perceived video-streaming quality.
+- Quantify relationships between technical QoS/QoA metrics and MOS.
+- Detect unusual streaming sessions and network behavior.
+- Convert MOS into an actionable at-risk / retained classification target.
+- Compare baseline and ensemble classification models.
+- Translate model results into practical QoE decisions.
 
-The main goals of this project are:
+## Repository structure
 
-- Understand key drivers of user satisfaction (MOS) in video streaming  
-- Analyze relationships between QoS metrics and QoE  
-- Detect anomalies in user experience and network behavior  
-- Identify at-risk users based on dissatisfaction signals  
-- Build and compare machine learning models to predict user retention  
+```text
+.
+├── DataScienceProject_updated.ipynb
+├── data/
+│   └── video_streaming_qoe.csv
+├── docs/
+│   └── Analysis of Quality of Experience in Video Streaming Report.pdf
+└── README.md
+```
 
----
+- **DataScienceProject_updated.ipynb** — main exploratory analysis and modeling notebook.
+- **data/video_streaming_qoe.csv** — streaming-session dataset used in the analysis.
+- **docs/** — final project report.
 
-## 📂 Dataset Overview
+## Dataset
 
-- **Samples:** ~1,540 video streaming sessions  
-- **Users:** 181 participants  
-- **Devices:** 9 Android device models  
-- **Operators:** Orange, SFR, Bouygues, Free  
-- **Target Variable:** Mean Opinion Score (MOS), rated from 1 (poor) to 5 (excellent)
+The dataset contains roughly **1,540 streaming sessions** from **181 participants**, covering multiple Android devices and French mobile operators.
 
-### Feature Categories
+The response variable is:
 
-- **QoA (Quality of Application):**  
-  Bitrate, buffering time, buffering count, framerate, dropped frames, resolution  
+- **MOS (Mean Opinion Score):** subjective quality rating from 1 (poor) to 5 (excellent).
 
-- **QoS (Quality of Service):**  
-  Network operator, service type  
+Feature groups include:
 
-- **QoD (Quality of Device):**  
-  Device model, OS version, API level  
+| Group | Examples |
+| --- | --- |
+| QoA — Application | resolution, bitrate, framerate, dropped frames, buffering count/time |
+| QoS — Service/network | service type, operator |
+| QoD — Device | model, OS version, API level |
+| QoU — User | age, sex, study group |
+| QoF — Feedback | audio and video quality ratings |
 
-- **QoU (Quality of User):**  
-  Age, gender, study group  
+## Analysis workflow
 
-- **QoF (Quality of Feedback):**  
-  Audio and video quality ratings  
+1. Load and inspect the session-level data.
+2. Check data types, missing values, ranges, and category balance.
+3. Explore MOS and its relationship with technical and subjective variables.
+4. Detect anomalous sessions using statistical and machine-learning methods.
+5. Define an actionable binary outcome:
+   - **Retained:** MOS ≥ 4
+   - **At risk:** MOS < 4
+6. Prepare features for modeling.
+7. Compare classification models including Logistic Regression, Random Forest, XGBoost, and LightGBM.
+8. Interpret feature importance and connect model findings to QoE decisions.
 
----
+## Code preview
 
-## 🔍 Exploratory Data Analysis (EDA)
+A minimal starting point for reproducing the analysis:
 
-Key insights from EDA include:
+```python
+import pandas as pd
 
-- Strong negative correlation between buffering time/count and MOS  
-- Framerate positively impacts user satisfaction, especially above 25 fps  
-- Bitrate alone is not a reliable predictor of user satisfaction  
-- Dataset shows imbalances in device models, OS versions, and operators  
-- MOS distribution is right-skewed, with most users rating 4 or 5  
+DATA_PATH = "data/video_streaming_qoe.csv"
 
----
+df = pd.read_csv(DATA_PATH)
 
-## 🚨 Anomaly Detection
+print(df.shape)
+print(df.dtypes)
+print(df["MOS"].value_counts().sort_index())
 
-Two complementary techniques were applied:
+# Turn subjective QoE into an actionable binary target.
+df["retained"] = (df["MOS"] >= 4).astype(int)
 
-- **Z-Score Analysis**  
-  Detects extreme buffering times and MOS values  
+# Example QoE indicators to inspect first.
+qoe_features = [
+    "QoA_VLCbitrate",
+    "QoA_VLCframerate",
+    "QoA_BUFFERINGcount",
+    "QoA_BUFFERINGtime",
+    "QoF_audio",
+    "QoF_video",
+]
 
-- **Isolation Forest**  
-  Identifies multidimensional and non-linear anomalies  
+print(df[qoe_features + ["MOS", "retained"]].describe())
+```
 
-**Result:**  
-A total of **77 anomalous sessions** were identified, improving robustness before modeling.
+## Main findings reported in the project
 
----
+- Buffering time and buffering count are strongly associated with lower MOS.
+- Higher framerate generally corresponds to better perceived quality.
+- Bitrate alone is not a sufficient explanation of user satisfaction.
+- The data are imbalanced across devices, OS versions, and operators.
+- MOS is concentrated toward higher ratings.
+- Audio/video subjective feedback and buffering variables are among the strongest predictive features.
 
-## 🤖 Modeling & Prediction
+The notebook also compares several classifiers, with reported accuracy around 90%. Accuracy should not be treated as the only decision metric because the retained/at-risk target is imbalanced; precision, recall, F1, ROC-AUC/PR-AUC, calibration, and business costs should also be considered.
 
-To predict **user retention**, MOS was transformed into a binary target:
+## Limitations
 
-- **Retained:** MOS ≥ 4  
-- **At-Risk:** MOS < 4  
+- MOS is subjective and can vary across users.
+- Device, OS, and operator representation is uneven.
+- Sessions from the same user may not be statistically independent.
+- The original workflow does not deeply model temporal effects such as congestion by time of day.
+- A binary MOS threshold simplifies a naturally ordinal outcome.
+- Predictive performance does not by itself establish causal effects.
 
-### Models Implemented
+## Suggested next steps
 
-| Model               | Accuracy | Key Strength                                   |
-|--------------------|----------|------------------------------------------------|
-| Random Forest       | 90.71%   | Interpretability & feature importance           |
-| XGBoost             | **90.50%** | Best overall performance                        |
-| LightGBM            | 90.28%   | Fast and computationally efficient              |
-| Logistic Regression | 90.06%   | Strong baseline                                 |
+This repository can be rebuilt into a stronger end-to-end data science project by:
 
-### Most Important Features
+- separating raw data, notebooks, reusable source code, and model artifacts;
+- introducing user-aware train/test splitting to reduce leakage;
+- documenting preprocessing and feature definitions;
+- adding proper baseline models and imbalance-aware evaluation;
+- comparing classification with ordinal/regression approaches for MOS;
+- adding calibration, threshold selection, and decision-cost analysis;
+- making every conclusion traceable to a plot, statistical test, or model result.
 
-- Audio quality (QoF_audio)  
-- Buffering time  
-- Video quality feedback  
+## Tech stack
 
----
+- Python
+- pandas / NumPy
+- matplotlib / seaborn
+- scikit-learn
+- XGBoost
+- LightGBM
+- Jupyter Notebook
 
-## 🧠 Key Takeaways
+## Report
 
-- Buffering is the most damaging factor for user experience  
-- Smooth playback matters more than raw bitrate  
-- Audio quality plays a dominant role in user satisfaction  
-- Ensemble models outperform linear approaches  
+See [Analysis of Quality of Experience in Video Streaming Report](docs/Analysis%20of%20Quality%20of%20Experience%20in%20Video%20Streaming%20Report.pdf).
 
----
-
-## ⚠️ Limitations
-
-- Imbalanced representation of devices, OS versions, and operators  
-- MOS is subjective and may include personal bias  
-- No temporal analysis (e.g., peak vs off-peak usage)  
-
----
-
-## 🚀 Future Work
-
-- Incorporate temporal features such as time-of-day congestion  
-- Analyze network latency and packet loss  
-- Apply fairness-aware modeling to address categorical imbalance  
-- Extend to real-time QoE monitoring  
-
----
-
-## 🛠️ Tech Stack
-
-- Python (Pandas, NumPy, Scikit-learn)  
-- XGBoost & LightGBM  
-- Matplotlib & Seaborn  
-- Jupyter Notebook  
-
----
-
-## 📄 Report & Code
-
-- **Project Report:**  
-  [Analysis of Quality of Experience in Video Streaming](docs/Analysis_of_Quality_of_Experience_in_Video_Streaming_Report.pdf)
-
- 
-
-- **Code Repository:**  
-  https://github.com/Pratistha-99/Pokemon/tree/main  
-
----
-
-## 👤 Author
+## Author
 
 **Pratistha Thapa**  
-MSc Data Science & Network Intelligence
-Télécom SudParis  
-Paris, France
+MSc Data Science & Network Intelligence  
+Télécom SudParis
